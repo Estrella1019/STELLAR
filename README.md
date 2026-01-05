@@ -5,7 +5,7 @@
 [![OpenSBT](https://img.shields.io/badge/built_on-OpenSBT-purple.svg)](https://github.com/opensbt/opensbt-core)
 
 <p align="center">
-  <img src="../figures/approach-overview.png" alt="Architecture of STELLAR" width="400">
+  <img src="./figures/approach-overview.png" alt="Architecture of STELLAR" width="400">
 </p>
 
 STELLAR is a modular search-based testing framework for benchmarking LLM-based applications. It builds upon the <a href="https://www.github.com/opensbt">OpenSBT</a> infrastructure and is based on [Pymoo](https://pymoo.org/) 0.6.1.5. STELLAR provides the following core capabilities:
