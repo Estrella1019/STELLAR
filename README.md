@@ -335,7 +335,7 @@ You can set the oracle threshold using __th_content=0.75__ and  __th_response=0.
 
 ## Citation
 
-A preprint of the paper can be found on [arXiv](https://arxiv.org/abs/2503.07222).
+A preprint of the paper can be found on [arXiv](https://arxiv.org/abs/2601.00497).
 
 If you use our work in your research, if you extend it, or if you simply like it, please cite it in your publications. 
 
