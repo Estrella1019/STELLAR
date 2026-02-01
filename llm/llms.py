@@ -19,6 +19,8 @@ class LLMType(Enum):
     GPT_5_MINI = "gpt-5-mini"
     GPT_5_NANO = "gpt-5-nano"
     GPT_5_CHAT = "gpt-5-chat"
+
+    # --- 现有模型 ---
     LLAMA3_2 = "llama3.2"
     DOLPHIN_MISTRAL = "dolphin-mistral"
     DEEPSEEK_V2 = "deepseek-v2"
@@ -32,10 +34,32 @@ class LLMType(Enum):
     DOLPHIN_21_UNCENSORED = "mainzone/dolphin-2.1-mistral-7b-uncensored"
     DOLPHIN3 = "dolphin3"
 
+    # --- 本地 Ollama 模型 ---
+    DEEPSEEK_R1 = "deepseek-r1:7b"
+    DOLPHIN_LLAMA3 = "dolphin-llama3"
+    LLAMA3_1 = "llama3.1"
+    QWEN2_5 = "qwen2.5:7b"  # 新增 Qwen2.5 作为可靠的 Judge
+
 
 ALL_MODELS = [llm.value for llm in LLMType]
 GPT5_MODELS = {LLMType.GPT_5, LLMType.GPT_5_MINI,  LLMType.GPT_5_NANO, LLMType.GPT_5_CHAT}
-LOCAL_MODELS = {LLMType.GEMMA, LLMType.MISTRAL, LLMType.LLAMA3_2, LLMType.DOLPHIN_MISTRAL, LLMType.DEEPSEEK_V2, LLMType.DOLPHIN3}
+
+# --- 将新模型加入 LOCAL_MODELS 集合 ---
+# 只有在这个集合里的模型，才会走 call_ollama 本地调用逻辑
+LOCAL_MODELS = {
+    LLMType.GEMMA,
+    LLMType.MISTRAL,
+    LLMType.LLAMA3_2,
+    LLMType.DOLPHIN_MISTRAL,
+    LLMType.DEEPSEEK_V2,
+    LLMType.DOLPHIN3,
+    # 新增的:
+    LLMType.DEEPSEEK_R1,
+    LLMType.DOLPHIN_LLAMA3,
+    LLMType.LLAMA3_1,
+    LLMType.QWEN2_5  # 新增 Qwen2.5
+}
+
 OPENAI_MODELS = GPT5_MODELS | {LLMType.GPT_35_TURBO, LLMType.GPT_4, LLMType.GPT_4O, LLMType.GPT_4_1, LLMType.GPT_4O_MINI, LLMType.GPT_3O_MINI}
 DEEPSEEK_MODELS = {LLMType.DEEPSEEK_V3_0324, LLMType.DEEPSEEK_R1_QCBAR}
 
@@ -45,6 +69,10 @@ class ModelStatistics:
 
     @classmethod
     def record_usage(cls, model_type, tokens_used, time_taken):
+        # 简单防护，防止新模型未初始化统计字典报错
+        if model_type not in cls.statistics:
+            cls.statistics[model_type] = {"tokens": 0, "time": 0, "calls": 0}
+            
         cls.statistics[model_type]["tokens"] += tokens_used
         cls.statistics[model_type]["time"] += time_taken
         cls.statistics[model_type]["calls"] += 1
@@ -109,6 +137,7 @@ def pass_llm(
         elif llm_type in LOCAL_MODELS:
             from llm.call_ollama import call_ollama
     
+            # 调用本地 Ollama
             response_text, total_tokens, elapsed_time = call_ollama(
                 prompt, max_tokens, temperature, llm_type.value, system_message, context
             )
@@ -148,6 +177,8 @@ def pass_llm(
     # Clean up the response text
     if response_text is None:
         response_text = ""
+    # 注意：这里可能会移除引号，如果是 JSON 解析失败可以排查这里，
+    # 但由于我们现在改用了正则提取，所以这里移除引号影响不大。
     response_text = response_text.replace('"', '')
 
     if DEBUG:

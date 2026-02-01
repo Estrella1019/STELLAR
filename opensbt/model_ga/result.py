@@ -17,7 +17,14 @@ from opensbt.config import EXPERIMENTAL_MODE, RESULTS_FOLDER, WRITE_ALL_INDIVIDU
 from opensbt.evaluation.fitness import Fitness
 from opensbt.experiment.search_configuration import SearchConfiguration
 from opensbt.utils.sorting import get_nondominated_population
-from opensbt.visualization import output_metric, visualizer, visualizer_llm
+
+# 修改后的导入方式
+from opensbt.visualization import visualizer, visualizer_llm
+# 如果 output_metric 报错，我们先定义一个空对象防止 NameError
+try:
+    from opensbt.visualization import output_metric
+except ImportError:
+    output_metric = None
 
 
 class SimulationResult(Result):
@@ -238,12 +245,6 @@ class SimulationResult(Result):
         algorithm = self.algorithm
 
         print("[write_results] results_folder is: ", results_folder)
-        # WHen algorithm is developed without subclassing pymoos Algorithm,
-        # we need to use the explicit algorithm name passed via params
-
-        # if type(algorithm) is Algorithm:
-        #     algorithm_name = params["algorithm_name"]
-        # else:
         
         if params is not None and "algorithm_name" in params:
             algorithm_name = params["algorithm_name"]
@@ -260,17 +261,18 @@ class SimulationResult(Result):
         )
         log.info(save_folder)
 
-        # Mostly for algorithm evaluation relevant
-
         try:
-            # output_metric.gd_analysis(self, save_folder)
-            output_metric.hypervolume_analysis(
-                self, save_folder, ref_point_hv=self.ref_point
-            )
-            # output_metric.spread_analysis(self, save_folder)
-        except Exception:
-            print("Hypervolume analysis not possible.")
+            # 只有当 output_metric 存在时才执行分析
+            if output_metric is not None:
+                output_metric.hypervolume_analysis(
+                    self, save_folder, ref_point_hv=self.ref_point
+                )
+            else:
+                log.warning("output_metric is not available, skipping hypervolume analysis.")
+        except Exception as e:
+            print(f"Hypervolume analysis not possible: {e}")
             pass
+            
         if search_config is not None:
             visualizer.write_search_config(self, save_folder, search_config)
 
@@ -279,23 +281,12 @@ class SimulationResult(Result):
             self, save_folder, algorithm_name, algorithm_parameters=params
         )
 
-        # visualizer_llm.design_space(self, save_folder)
-        # llm_output.show_critical_heatmap_features(self, save_folder)
-
         visualizer.objective_space(self, save_folder)
         visualizer.optimal_individuals(self, save_folder)
         visualizer.all_critical_individuals(self, save_folder)
         visualizer.write_summary_results(self, save_folder, params=params)
         llm_output.write_failures_over_time(self, save_folder)
         llm_output.calculate_diversity(self, save_folder)
-
-        # visualizer.write_simulation_output(self,save_folder,
-        #                                    mode= config.MODE_WRITE_SIMOUT,
-        #                                    write_max=config.NUM_SIMOUT_MAX)
-        # visualizer.plot_timeseries_basic(self,
-        #    save_folder,
-        #    mode= config.MODE_PLOT_TIME_TRACES,
-        #     write_max = config.NUM_PLOT_TIME_TRACES)
 
         llm_output.write_tests_to_json(self, save_folder)
         llm_output.write_tests_to_json(
@@ -305,10 +296,6 @@ class SimulationResult(Result):
         llm_output.copy_config(save_folder)
         llm_output.copy_prompts(save_folder)
 
-        # visualizer.simulations(self,
-        # save_folder,
-        # mode = config.MODE_WRITE_GIF,
-        # write_max = config.NUM_GIF_MAX)
         if WRITE_ALL_INDIVIDUALS:
             visualizer.all_individuals(self, save_folder)
             visualizer_llm.all_individuals_llm(self, save_folder)

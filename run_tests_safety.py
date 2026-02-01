@@ -34,21 +34,24 @@ from opensbt.utils.log_utils import disable_pymoo_warnings, log, setup_logging
 from opensbt.utils.wandb import logging_callback_archive, TableCallback
 from opensbt.utils.callback import merged_callbacks
 
+# [新增] 定义你的自定义模型列表，防止 argparse 报错
+CUSTOM_MODELS = ["dolphin3:latest"]
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run Navi test with selectable SUT")
     parser.add_argument(
         "--population_size",
         type=int,
-        default=4,
-        help="Population size for GA (default: 4)",
+        default=20,
+        help="Population size for GA (default: 20)",
     )
     parser.add_argument(
         "--n_generations",
         type=int,
-        default=1,
-        help="Number of generations (default: 1)",
+        default=10,
+        help="Number of generations (default: 10)",
     )
+    # ... 其他保持不变
     parser.add_argument("--seed", type=int, default=4, help="Seed")
     parser.add_argument(
         "--max_time",
@@ -72,28 +75,33 @@ def parse_args():
     parser.add_argument(
         "--sut",
         type=str,
-        choices=ALL_MODELS,
+        # [修改] 允许 ALL_MODELS 加上你的 CUSTOM_MODELS
+        choices=ALL_MODELS + CUSTOM_MODELS,
         default=LLMType.DEEPSEEK_V2.value,
         help="The LLM tested.",
     )
     parser.add_argument(
         "--generator",
         type=str,
-        choices=ALL_MODELS,
-        default=LLMType.DOLPHIN3.value,
+        # [修改] 允许 ALL_MODELS 加上你的 CUSTOM_MODELS
+        choices=ALL_MODELS + CUSTOM_MODELS,
+        # 注意：如果 LLMType.DOLPHIN3.value 报错，可以临时改成字符串 "dolphin3:latest"
+        default=LLMType.DOLPHIN3.value if hasattr(LLMType, 'DOLPHIN3') else "dolphin3:latest",
         help="The LLM used to generate inputs",
     )
     parser.add_argument(
         "--fitness",
         type=str,
-        choices=ALL_MODELS,
+        # [修改] 允许 ALL_MODELS 加上你的 CUSTOM_MODELS
+        choices=ALL_MODELS + CUSTOM_MODELS,
         default=LLMType.GPT_4O_MINI.value,
         help="The LLM used to calculate fitness",
     )
     parser.add_argument(
         "--judge",
         type=str,
-        choices=ALL_MODELS,
+        # [修改] 允许 ALL_MODELS 加上你的 CUSTOM_MODELS
+        choices=ALL_MODELS + CUSTOM_MODELS,
         default=LLMType.GPT_4O_MINI.value,
         help="The LLM used to select failures",
     )
@@ -131,7 +139,16 @@ if __name__ == "__main__":
     logger = log.getLogger(__name__)
     setup_logging(LOG_FILE)
     disable_pymoo_warnings()
-    llm_generator = LLMType(args.generator)
+    
+    # [修改] 增加容错处理：如果 LLMType 枚举中没有这个 key，则使用原始字符串
+    try:
+        llm_generator = LLMType(args.generator)
+    except ValueError:
+        print(f"[WARN] '{args.generator}' not found in LLMType enum. Using raw string.")
+        llm_generator = args.generator
+
+    # 同样逻辑处理其他可能用到的模型 (如果有必要的话)
+    # sut_model = ... (虽然代码下面直接用了 LLMType(args.sut) 或 IOSimulator 内部处理)
 
     search_operatoes = QASearchOperators(
         crossover=UtteranceCrossoverDiscrete(
@@ -165,8 +182,25 @@ if __name__ == "__main__":
         n_repopulate_max=0.5,
     )
 
-    fitness = AstralFitnessAnswerValidation(llm_type=LLMType(args.fitness))
-    critical = CriticalAstral(llm_type=LLMType(args.judge))
+    # [修改] 同样增加对 fitness 和 judge 的容错 (如果它们也使用了新模型)
+    try:
+        fitness_llm = LLMType(args.fitness)
+    except ValueError:
+        fitness_llm = args.fitness
+
+    try:
+        judge_llm = LLMType(args.judge)
+    except ValueError:
+        judge_llm = args.judge
+
+    fitness = AstralFitnessAnswerValidation(llm_type=fitness_llm)
+    critical = CriticalAstral(llm_type=judge_llm)
+
+    # [修改] SUT 的容错处理
+    try:
+        sut_llm = LLMType(args.sut)
+    except ValueError:
+        sut_llm = args.sut
 
     # we update the name based on the sut used
     problem_name = (
@@ -187,12 +221,11 @@ if __name__ == "__main__":
     tags.append(f"features:{'astral' if 'astral' in args.features_config else 'extended'}")
 
     if not args.no_wandb:
-        weave.init("dev")
+        #weave.init("dev")
         wandb.init(
-            entity="opentest",                  # team
-            project="SafeLLM",                  # the project name
-            name=problem_name,                  # run name
-            group=datetime.now().strftime("%d-%m-%Y"),  # group by date
+            project="stellar-reproduction",
+            name=problem_name,
+            group=datetime.now().strftime("%d-%m-%Y"),
             tags=tags,
         )
     else:
@@ -206,7 +239,7 @@ if __name__ == "__main__":
         simulation_variables=["utterance"],
         fitness_function=fitness,
         critical_function=critical,
-        simulate_function=IOSimulator(llm_type=LLMType(args.sut)).simulate,
+        simulate_function=IOSimulator(llm_type=sut_llm).simulate, # 使用处理过的 sut_llm
         seed_utterances=[
             "",
         ],
@@ -233,8 +266,12 @@ if __name__ == "__main__":
     optimizer_class: type[Optimizer] = optimizer_map[args.algorithm]
     optimizer = optimizer_class(problem, config, callback=callback, algorithm_name=args.algorithm)
     res = optimizer.run()
-    res.write_results(
+    
+    print(f"\n[INFO] Optimization finished. Saving results...")
+    save_folder = res.write_results(
         results_folder=optimizer.save_folder, params=optimizer.parameters, search_config=config
     )
 
     log.info("====== Algorithm search time: " + str("%.2f" % res.exec_time) + " sec")
+    print(f"\n[SUCCESS] Results saved to: {save_folder}")
+    print(f"Check failures_over_time.csv inside that folder for attack success rate.")
