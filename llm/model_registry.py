@@ -31,8 +31,8 @@ MODEL_REGISTRY = {
         "api_version": "2023-07-01-preview",
         "azure_endpoint": DEFAULT_AZURE_ENDPOINT,
     },
-    "gpt-4o-mini": {
-        "deployment_name": "gpt-4o-mini",
+    "deepseek-chat": {
+        "deployment_name": "deepseek-chat",
         "api_version": "2023-07-01-preview",
         "azure_endpoint": DEFAULT_AZURE_ENDPOINT,
     },

@@ -2,17 +2,17 @@ import os
 
 DEBUG = False
 
-LLM_TYPE = os.getenv("LLM_TYPE", "gpt-4o-mini")
+LLM_TYPE = os.getenv("LLM_TYPE", "deepseek-chat")
 MAX_TOKENS = 400
 
-DEPLOYMENT_NAME = os.getenv("DEPLOYMENT_NAME", "gpt-4o-mini")
+DEPLOYMENT_NAME = os.getenv("DEPLOYMENT_NAME", "deepseek-chat")
 N_VALIDATORS = int(os.getenv("N_VALIDATORS", 1))
 
-LLM_OLLAMA = os.getenv("LLM_OLLAMA", "gpt-4o-mini")
-LLM_SAMPLING = os.getenv("LLM_SAMPLING", "gpt-4o-mini")
-LLM_MUTATOR = os.getenv("LLM_MUTATOR", "gpt-4o-mini")
-LLM_CROSSOVER = os.getenv("LLM_CROSSOVER", "gpt-4o-mini")
-LLM_VALIDATOR = os.getenv("LLM_VALIDATOR", "gpt-4o-mini")
+LLM_OLLAMA = os.getenv("LLM_OLLAMA", "deepseek-chat")
+LLM_SAMPLING = os.getenv("LLM_SAMPLING", "deepseek-chat")
+LLM_MUTATOR = os.getenv("LLM_MUTATOR", "deepseek-chat")
+LLM_CROSSOVER = os.getenv("LLM_CROSSOVER", "deepseek-chat")
+LLM_VALIDATOR = os.getenv("LLM_VALIDATOR", "deepseek-chat")
 LLM_IPA = os.getenv("LLM_IPA", DEPLOYMENT_NAME)
 
 CONTEXT = {

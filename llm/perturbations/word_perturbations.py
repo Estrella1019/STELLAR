@@ -324,14 +324,14 @@ def test_perturbation_methods(test_strings, output_name="homophone_test_results"
         row_data["GPT-4O"] = result_llm
         row_data["4O Time"] = llm_time
 
-        # test introduce_homophones_llm with GPT-4o-mini
+        # test introduce_homophones_llm with deepseek-chat
         start = time.time()
         result_llm_4o_mini = introduce_homophones_llm(test_string, LLMType.GPT_4O_MINI)
         end = time.time()
         llm_4o_mini_time = end - start
-        print(f"introduce_homophones_llm GPT-4o-mini ({llm_4o_mini_time:.4f}s): {result_llm_4o_mini}")
+        print(f"introduce_homophones_llm deepseek-chat ({llm_4o_mini_time:.4f}s): {result_llm_4o_mini}")
 
-        row_data["GPT-4O-Mini"] = result_llm_4o_mini
+        row_data["deepseek-chat"] = result_llm_4o_mini
         row_data["4O-Mini Time"] = llm_4o_mini_time
         
         # test introduce_homophones_llm with GPT-5
@@ -374,12 +374,12 @@ def test_perturbation_methods(test_strings, output_name="homophone_test_results"
         row_data["Fillers LLM 4O"] = result_fillers_llm
         row_data["Fillers LLM 4O Time"] = fillers_llm_time
         
-        # test introduce_fillers_llm with GPT-4o-mini
+        # test introduce_fillers_llm with deepseek-chat
         start = time.time()
         result_fillers_llm_mini = introduce_fillers_llm(test_string, LLMType.GPT_4O_MINI)
         end = time.time()
         fillers_llm_mini_time = end - start
-        print(f"introduce_fillers_llm GPT-4o-mini ({fillers_llm_mini_time:.4f}s): {result_fillers_llm_mini}")
+        print(f"introduce_fillers_llm deepseek-chat ({fillers_llm_mini_time:.4f}s): {result_fillers_llm_mini}")
 
         row_data["Fillers LLM 4O-Mini"] = result_fillers_llm_mini
         row_data["Fillers LLM 4O-Mini Time"] = fillers_llm_mini_time

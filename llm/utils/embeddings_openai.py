@@ -4,7 +4,7 @@ from llm.llm_openai import get_openai_client
 from llm.config import DEPLOYMENT_NAME
 import numpy as np
 
-def get_embedding(text, model="text-embedding-ada-002", model_api = "gpt-4o-mini"):
+def get_embedding(text, model="text-embedding-ada-002", model_api = "deepseek-chat"):
     """Fetches the embedding vector for a given text using OpenAI's API."""
     client = get_openai_client(model_api)
     response = client.embeddings.create(input=text,
